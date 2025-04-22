@@ -23,8 +23,7 @@
             </div>
             <div>
                 <h3 class="text-sm font-medium text-gray-600">Total Users</h3>
-                <p class="text-2xl font-semibold text-gray-800">1,234</p>
-                <p class="text-xs text-green-500">+5.2% from last month</p>
+                <p class="text-2xl font-semibold text-gray-800">{{ \App\Models\User::count()}}</p>
             </div>
         </div>
         <!-- Card 2: Active Projects -->
@@ -37,9 +36,8 @@
                 </svg>
             </div>
             <div>
-                <h3 class="text-sm font-medium text-gray-600">Active Projects</h3>
-                <p class="text-2xl font-semibold text-gray-800">56</p>
-                <p class="text-xs text-green-500">+3 new this week</p>
+                <h3 class="text-sm font-medium text-gray-600">Total Roles</h3>
+                <p class="text-2xl font-semibold text-gray-800">{{ \App\Models\Role::count()}}</p>
             </div>
         </div>
         <!-- Card 3: Revenue -->
@@ -52,9 +50,8 @@
                 </svg>
             </div>
             <div>
-                <h3 class="text-sm font-medium text-gray-600">Revenue</h3>
-                <p class="text-2xl font-semibold text-gray-800">$45,678</p>
-                <p class="text-xs text-green-500">+12% from last month</p>
+                <h3 class="text-sm font-medium text-gray-600">Menu Master</h3>
+                {{-- <p class="text-2xl font-semibold text-gray-800">{{ \App\Models\MasterMenu::count()}}</p> --}}
             </div>
         </div>
         <!-- Card 4: System Alerts -->

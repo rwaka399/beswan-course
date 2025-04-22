@@ -1,18 +1,18 @@
 @extends('master.layout')
 
-@section('title', 'User Management')
+@section('title', 'Role Management')
 
 @section('content')
     <div class="mt-4 max-w-full mx-auto">
         <!-- Header -->
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-800">User Management</h1>
+            <h1 class="text-2xl font-bold text-gray-800">Role Management</h1>
         </div>
 
         <!-- Search Bar -->
         <div class="mb-6">
-            <form action="{{ route('user-index') }}" method="GET" class="flex items-center">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search..."
+            <form action="{{ route('role-index') }}" method="GET" class="flex items-center">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search roles..."
                     class="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <button type="submit" class="ml-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
                     Search
@@ -34,8 +34,7 @@
             </div>
         @endif
 
-
-        <!-- User Table -->
+        <!-- Role Table -->
         <div class="bg-white shadow-sm rounded-lg overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -43,35 +42,15 @@
                         <tr>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Name
+                                Role Name
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Email
+                                Role Description
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Phone
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Province
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                City
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Kecamatan
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Address
-                            </th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Role
+                                Created By
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -80,48 +59,33 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @forelse ($users as $user)
+                        @forelse ($roles as $role)
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $user->name }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $user->email }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $user->phone_number ?? '-' }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $user->province ?? '-' }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $user->city ?? '-' }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $user->kecamatan ?? '-' }}
+                                    {{ $role->role_name }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-900">
-                                    {{ $user->address ?? '-' }}
+                                    {{ $role->role_description ?? '-' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {{ $user->userRole->first()->role->role_name ?? '-' }}
+                                    {{ $role->creator->name ?? '-' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <a href="{{ route('user-edit', $user->user_id) }}"
+                                    <a href="{{ route('role-edit', $role->role_id) }}"
                                         class="inline-block bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 mr-2">
                                         Edit
                                     </a>
                                     <button type="button"
                                         class="inline-block bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
-                                        onclick="openDeleteModal({{ $user->user_id }}, '{{ addslashes($user->name) }}')">
+                                        onclick="openDeleteModal({{ $role->role_id }}, '{{ addslashes($role->role_name) }}')">
                                         Delete
                                     </button>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500">
-                                    No users found.
+                                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    No roles found.
                                 </td>
                             </tr>
                         @endforelse
@@ -130,21 +94,20 @@
             </div>
 
             <!-- Pagination -->
-            @if( $users->hasPages())
+            @if ($roles->hasPages())
                 <div class="p-4">
-                    {{ $users->appends(request()->query())->links('vendor.pagination.custom-tailwind') }}
+                    {{ $roles->appends(request()->query())->links('vendor.pagination.custom-tailwind') }}
                 </div>
             @endif
         </div>
 
         <div class="pt-3 pb-6">
-            <a href="{{ route('user-create') }}"
+            <a href="{{ route('role-create') }}"
                 class="inline-block bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600">
-                Create User
+                Create Role
             </a>
         </div>
     </div>
-
 
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="fixed inset-0 flex items-center justify-center hidden z-50" role="dialog">
@@ -159,7 +122,7 @@
                         d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
                 <p class="mt-4 text-gray-600">
-                    Yakin ingin menghapus user <span id="deleteUserName" class="font-semibold text-gray-800"></span>?<br>
+                    Yakin ingin menghapus role <span id="deleteUserName" class="font-semibold text-gray-800"></span>?<br>
                     Tindakan ini tidak dapat dibatalkan.
                 </p>
             </div>
@@ -178,32 +141,32 @@
     </div>
 
     <script>
-        // Flash Message auto ilang
+        // Flash Message auto disappear
         document.addEventListener('DOMContentLoaded', () => {
             const flashes = document.querySelectorAll('.flash-message');
             flashes.forEach(el => {
                 setTimeout(() => {
-                    // tambahkan opacity-0 (fade out)
+                    // Add opacity-0 (fade out)
                     el.classList.add('opacity-0');
-                    // setelah fade (500ms), remove dari DOM
+                    // Remove from DOM after fade (500ms)
                     setTimeout(() => el.remove(), 500);
                 }, 3000);
             });
         });
 
         // Modal
-        // Template URL dengan placeholder :ID
-        const deleteUrlTemplate = "{{ route('user-destroy', ['id' => ':ID']) }}";
+        // Template URL with placeholder :ID
+        const deleteUrlTemplate = "{{ route('role-destroy', ['id' => ':ID']) }}";
 
-        function openDeleteModal(userId, userName) {
-            // Set action form ke /user/destroy/{id}
+        function openDeleteModal(roleId, roleName) {
+            // Set form action to /role/destroy/{id}
             const form = document.getElementById('deleteForm');
-            form.action = deleteUrlTemplate.replace(':ID', userId);
+            form.action = deleteUrlTemplate.replace(':ID', roleId);
 
-            // Tampilkan nama di modal
-            document.getElementById('deleteUserName').textContent = userName;
+            // Display role name in modal
+            document.getElementById('deleteUserName').textContent = roleName;
 
-            // Buka modal
+            // Open modal
             document.getElementById('deleteModal').classList.remove('hidden');
         }
 
@@ -211,7 +174,7 @@
             document.getElementById('deleteModal').classList.add('hidden');
         }
 
-        // Klik di luar modal atau Escape key untuk menutup
+        // Click outside modal or Escape key to close
         document.getElementById('deleteModal').addEventListener('click', function(event) {
             if (event.target === this) closeDeleteModal();
         });

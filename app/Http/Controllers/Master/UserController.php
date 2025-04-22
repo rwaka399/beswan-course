@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -15,22 +16,10 @@ use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
-    /**
-     * Fetch provinces from external API
-     */
-    private function fetchProvinces()
+
+    public function __construct()
     {
-        try {
-            $response = Http::timeout(10)->get('https://ibnux.github.io/data-indonesia/provinsi.json');
-            if ($response->successful()) {
-                return $response->json();
-            }
-            Log::error('Failed to fetch provinces', ['status' => $response->status()]);
-            return [];
-        } catch (\Exception $e) {
-            Log::error('Error fetching provinces: ' . $e->getMessage());
-            return [];
-        }
+        $this->middleware('auth');
     }
 
     public function index(Request $request)
@@ -53,18 +42,17 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->paginate(3)->appends(['search' => $request->search]);
+        $users = $query->paginate(5)->appends(['search' => $request->search]);
 
         return view('master.user.index', compact('users'));
     }
-
 
     public function create()
     {
         $provinces = $this->fetchProvinces();
         $roles = Role::all();
 
-        return view('admin.user.create', compact('roles', 'provinces'));
+        return view('master.user.create', compact('roles', 'provinces'));
     }
 
     public function store(Request $request)
@@ -85,7 +73,7 @@ class UserController extends Controller
         DB::beginTransaction();
 
         try {
-            $password = $request->filled('password') ? $request->password : 'admin';
+            $password = $request->filled('password') ? $request->password : 'admin123';
 
             $user = User::create([
                 'name'          => $request->name,
@@ -122,7 +110,29 @@ class UserController extends Controller
         $roles = Role::all();
         $provinces = $this->fetchProvinces();
 
-        return view('admin.user.edit', compact('user', 'roles', 'provinces'));
+        // Normalize province, city, kecamatan
+        $user->province = $user->province ? strtoupper($user->province) : null;
+        $user->city = $user->city ? strtoupper($user->city) : null;
+        $user->kecamatan = $user->kecamatan ? ucfirst(strtolower($user->kecamatan)) : null;
+
+        // Find province_id
+        $user->province_id = null;
+        foreach ($provinces as $province) {
+            if ($province['nama'] === $user->province) {
+                $user->province_id = $province['id'];
+                break;
+            }
+        }
+
+        Log::info('Editing user', [
+            'user_id' => $id,
+            'province' => $user->province,
+            'province_id' => $user->province_id,
+            'city' => $user->city,
+            'kecamatan' => $user->kecamatan
+        ]);
+
+        return view('master.user.edit', compact('user', 'roles', 'provinces'));
     }
 
     public function update(Request $request, $id)
@@ -183,30 +193,54 @@ class UserController extends Controller
     {
         DB::beginTransaction();
         try {
+            Log::info("Attempting to delete user with ID: {$id}");
             UserRole::where('user_id', $id)->delete();
             $user = User::findOrFail($id);
             $user->delete();
-
+    
             DB::commit();
             return redirect()->route('user-index')->with('success', 'User deleted successfully');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error("Failed to delete user ID: {$id}, Error: " . $e->getMessage());
             return redirect()->back()->with('error', 'Failed to delete user: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Fetch cities based on province ID
-     */
+    private function fetchProvinces()
+    {
+        return Cache::remember('provinces', now()->addHours(24), function () {
+            try {
+                $response = Http::timeout(10)->get('https://ibnux.github.io/data-indonesia/provinsi.json');
+                if ($response->successful()) {
+                    return $response->json();
+                }
+                Log::error('Failed to fetch provinces', ['status' => $response->status()]);
+                return [];
+            } catch (\Exception $e) {
+                Log::error('Error fetching provinces: ' . $e->getMessage());
+                return [];
+            }
+        });
+    }
+
     public function getCities(Request $request)
     {
         $provinceId = $request->query('province_id');
         try {
-            $response = Http::timeout(10)->get("https://ibnux.github.io/data-indonesia/kota/{$provinceId}.json");
+            $url = "https://ibnux.github.io/data-indonesia/kota/{$provinceId}.json";
+            Log::info('Fetching cities', ['province_id' => $provinceId, 'url' => $url]);
+            $response = Http::timeout(10)->get($url);
             if ($response->successful()) {
-                return response()->json($response->json());
+                $cities = $response->json();
+                Log::info('Cities fetched successfully', ['province_id' => $provinceId, 'city_count' => count($cities)]);
+                return response()->json($cities);
             }
-            Log::error('Failed to fetch cities', ['province_id' => $provinceId, 'status' => $response->status()]);
+            Log::error('Failed to fetch cities', [
+                'province_id' => $provinceId,
+                'status' => $response->status(),
+                'response' => $response->body()
+            ]);
             return response()->json([], 500);
         } catch (\Exception $e) {
             Log::error('Error fetching cities: ' . $e->getMessage(), ['province_id' => $provinceId]);
@@ -214,18 +248,23 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Fetch kecamatan based on city ID
-     */
     public function getKecamatan(Request $request)
     {
         $cityId = $request->query('city_id');
         try {
-            $response = Http::timeout(10)->get("https://ibnux.github.io/data-indonesia/kecamatan/{$cityId}.json");
+            $url = "https://ibnux.github.io/data-indonesia/kecamatan/{$cityId}.json";
+            Log::info('Fetching kecamatan', ['city_id' => $cityId, 'url' => $url]);
+            $response = Http::timeout(10)->get($url);
             if ($response->successful()) {
-                return response()->json($response->json());
+                $kecamatans = $response->json();
+                Log::info('Kecamatans fetched successfully', ['city_id' => $cityId, 'kecamatan_count' => count($kecamatans)]);
+                return response()->json($kecamatans);
             }
-            Log::error('Failed to fetch kecamatan', ['city_id' => $cityId, 'status' => $response->status()]);
+            Log::error('Failed to fetch kecamatan', [
+                'city_id' => $cityId,
+                'status' => $response->status(),
+                'response' => $response->body()
+            ]);
             return response()->json([], 500);
         } catch (\Exception $e) {
             Log::error('Error fetching kecamatan: ' . $e->getMessage(), ['city_id' => $cityId]);

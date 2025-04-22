@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LessonPackage;
 use Illuminate\Http\Request;
 
 class ViewController extends Controller
 {
     public function index()
     {
-        return view('home');
+        $lessonPackages = LessonPackage::all();
+
+        return view('home', compact('lessonPackages'));
+        // return view('home');
     }
 
     public function dashboard()

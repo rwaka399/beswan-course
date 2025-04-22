@@ -155,4 +155,11 @@ class AuthController extends Controller
             return back()->with('error', 'Registration failed: ' . $e->getMessage());
         }
     }
+
+    public function logout()
+    {
+        Auth::logout();
+        Session::flush();
+        return redirect()->intended('/')->with('success', 'Logout successful! See you next time.');
+    }
 }

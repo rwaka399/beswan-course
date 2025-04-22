@@ -21,11 +21,18 @@ class RoleController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $roles = Role::all();
-
-        return view('admin.role.index', compact('roles'));
+        $query = Role::with('creator'); // Eager load relasi creator
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw('LOWER(role_name) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(role_description) LIKE ?', ["%{$search}%"]);
+            });
+        }
+        $roles = $query->paginate(10)->appends(['search' => $request->search]);
+        return view('master.role.index', compact('roles'));
     }
 
     /**
@@ -34,7 +41,7 @@ class RoleController extends Controller
     public function create()
     {
 
-        return view('admin.role.create');
+        return view('master.role.create');
     }
 
     /**
@@ -77,7 +84,7 @@ class RoleController extends Controller
     {
         $role = Role::findOrFail($id);
 
-        return view('admin.role.edit', compact('role'));
+        return view('master.role.edit', compact('role'));
     }
 
     /**
@@ -110,19 +117,18 @@ class RoleController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Role $role)
+    public function destroy($id)
     {
         DB::beginTransaction();
         try {
+            $role = Role::findOrFail($id);
             $role->delete();
 
             DB::commit();
-
             return redirect()->route('role-index')->with('success', 'Role deleted successfully.');
         } catch (\Exception $e) {
             DB::rollback();
             return redirect()->back()->with('error', 'Failed to delete role.');
         }
-        return redirect()->route('admin.role.index')->with('success', 'Role deleted successfully.');
     }
 }

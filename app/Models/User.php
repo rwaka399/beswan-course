@@ -59,4 +59,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserRole::class, 'user_id', 'user_id');
     }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class, 'user_id', 'user_id');
+    }
+
+    // Relasi dengan Invoice
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class, 'user_id', 'user_id');
+    }
 }
