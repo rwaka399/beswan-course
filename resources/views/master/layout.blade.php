@@ -38,7 +38,7 @@
                 <!-- Dropdown Menu dengan Shadow -->
                 <div id="dropdownMenu"
                     class="hidden absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg text-gray-700 py-2 z-30">
-                    <a href="#" class="block px-4 py-2 hover:bg-blue-50 text-sm">Profile</a>
+                    <a href="{{ route('profile-index') }}" class="block px-4 py-2 hover:bg-blue-50 text-sm">Profile</a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit"

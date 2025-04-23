@@ -106,32 +106,16 @@ class UserController extends Controller
 
     public function edit($id)
     {
+        // Ambil data user beserta relasi userRole
         $user = User::with('userRole')->findOrFail($id);
+
+        // Ambil semua role
         $roles = Role::all();
-        $provinces = $this->fetchProvinces();
 
-        // Normalize province, city, kecamatan
-        $user->province = $user->province ? strtoupper($user->province) : null;
-        $user->city = $user->city ? strtoupper($user->city) : null;
-        $user->kecamatan = $user->kecamatan ? ucfirst(strtolower($user->kecamatan)) : null;
+        // Ambil data provinsi dari sumber eksternal
+        $provinces = json_decode(file_get_contents('https://ibnux.github.io/data-indonesia/provinsi.json'), true);
 
-        // Find province_id
-        $user->province_id = null;
-        foreach ($provinces as $province) {
-            if ($province['nama'] === $user->province) {
-                $user->province_id = $province['id'];
-                break;
-            }
-        }
-
-        Log::info('Editing user', [
-            'user_id' => $id,
-            'province' => $user->province,
-            'province_id' => $user->province_id,
-            'city' => $user->city,
-            'kecamatan' => $user->kecamatan
-        ]);
-
+        // Kirim data ke view
         return view('master.user.edit', compact('user', 'roles', 'provinces'));
     }
 
@@ -197,7 +181,7 @@ class UserController extends Controller
             UserRole::where('user_id', $id)->delete();
             $user = User::findOrFail($id);
             $user->delete();
-    
+
             DB::commit();
             return redirect()->route('user-index')->with('success', 'User deleted successfully');
         } catch (\Exception $e) {
