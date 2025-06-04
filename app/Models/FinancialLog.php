@@ -4,27 +4,26 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Invoice extends Model
+class FinancialLog extends Model
 {
-    protected $primaryKey = 'invoice_id'; // Sesuaikan primary key
+    protected $primaryKey = 'financial_log_id';
 
     protected $fillable = [
-        'external_id',
-        'xendit_invoice_id',
+        'invoice_id',
         'transaction_id',
         'user_id',
         'lesson_package_id',
         'amount',
-        'payer_email',
+        'financial_type',
+        'payment_method',
         'description',
-        'status',
-        'invoice_url',
-        'expires_at',
+        'transaction_date',
     ];
 
-    protected $casts = [
-        'expires_at' => 'datetime',
-    ];
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class, 'invoice_id', 'invoice_id');
+    }
 
     public function transaction()
     {
@@ -39,10 +38,5 @@ class Invoice extends Model
     public function lessonPackage()
     {
         return $this->belongsTo(LessonPackage::class, 'lesson_package_id', 'lesson_package_id');
-    }
-
-    public function financialLog()
-    {
-        return $this->hasOne(FinancialLog::class, 'invoice_id', 'invoice_id');
     }
 }
